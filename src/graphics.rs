@@ -8,6 +8,7 @@ mod renderer;
 mod image;
 mod texture;
 mod canvas;
+mod font;
 mod sprite_params;
 
 use opengl::BufferUsage;
@@ -22,6 +23,7 @@ pub use self::image::Image;
 pub(crate) use self::image::validate_pixels;
 pub use texture::{Texture, NO_TEXTURE};
 pub use canvas::{Canvas, NO_CANVAS};
+pub use font::Font;
 pub use sprite_params::SpriteDrawParams;
 
 use crate::error::{GameError, GameResult};

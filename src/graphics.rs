@@ -411,22 +411,21 @@ impl Graphics {
     }
 
     pub fn draw_text(&mut self, font: &Font, text: &str, params: TextDrawParams) {
-        assert!(font.font().has_horizontal_metrics(), "the font does not provides horizontal text layout metrics");
+        let text_size = params.text_size.unwrap_or(14.0);
+        let line_metrics = font.font().horizontal_line_metrics(text_size).expect("the font does not support horizontal layout");
 
         self.switch_draw_command(DrawCommand {
             texture: font.clone_texture(),
             primitive: PrimitiveType::Triangles,
         });
 
-        let text_size = params.text_size.unwrap_or(14.0);
         let horizontal_align = params.horizontal_align.unwrap_or(TextHorizontalAlign::default());
         let vertical_align = params.vertical_align.unwrap_or(TextVerticalAlign::default());
         let wrap_width = params.wrap_width.unwrap_or(0.0);
         let wrap_height = params.wrap_height.unwrap_or(0.0);
         let char_spacing = params.char_spacing.unwrap_or(0.0);
-        let line_height = params.line_height.unwrap_or_else(|| font.font().new_line_height(text_size));
+        let line_height = params.line_height.unwrap_or(line_metrics.new_line_size);
         let line_spacing = params.line_spacing.unwrap_or(0.0);
-        let hhea = font.font().hhea(text_size);
 
         let origin = params.origin.unwrap_or_else(|| Point::zero());
         let position = params.position.map(|position| Vec3::new(position.x, position.y, 0.0)).unwrap_or_else(|| Vec3::zero());
@@ -458,7 +457,7 @@ impl Graphics {
                             };
                             let glyph_caret = Position::new(
                                 caret.x - origin.x + metrics.bounds.xmin,
-                                caret.y - origin.y + hhea.ascent - metrics.height as f32 - metrics.bounds.ymin,
+                                caret.y - origin.y + line_metrics.ascent - metrics.height as f32 - metrics.bounds.ymin,
                             );
                             let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
                             let x0y0 = model_matrix * Vec4::new(glyph_caret.x, glyph_caret.y, 0.0, 1.0);

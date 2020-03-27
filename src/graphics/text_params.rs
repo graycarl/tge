@@ -34,13 +34,13 @@ impl Default for TextVerticalAlign {
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct TextDrawParams {
     pub(crate) text_size: Option<f32>,
-    pub(crate) horizontal_align: Option<TextHorizontalAlign>,
-    pub(crate) vertical_align: Option<TextVerticalAlign>,
-    pub(crate) wrap_width: Option<f32>,
-    pub(crate) wrap_height: Option<f32>,
     pub(crate) char_spacing: Option<f32>,
     pub(crate) line_height: Option<f32>,
     pub(crate) line_spacing: Option<f32>,
+    pub(crate) wrap_width: Option<f32>,
+    pub(crate) wrap_height: Option<f32>,
+    pub(crate) horizontal_align: Option<TextHorizontalAlign>,
+    pub(crate) vertical_align: Option<TextVerticalAlign>,
     pub(crate) origin: Option<Point>,
     pub(crate) position: Option<Position>,
     pub(crate) rotation: Option<Angle>,
@@ -52,6 +52,21 @@ impl TextDrawParams {
 
     pub fn text_size(mut self, size: f32) -> Self {
         self.text_size = Some(size);
+        self
+    }
+
+    pub fn char_spacing(mut self, spacing: f32) -> Self {
+        self.char_spacing = Some(spacing);
+        self
+    }
+
+    pub fn line_height(mut self, height: f32) -> Self {
+        self.line_height = Some(height);
+        self
+    }
+
+    pub fn line_spacing(mut self, spacing: f32) -> Self {
+        self.line_spacing = Some(spacing);
         self
     }
 
@@ -72,21 +87,6 @@ impl TextDrawParams {
 
     pub fn wrap_height(mut self, height: f32) -> Self {
         self.wrap_height = Some(height);
-        self
-    }
-
-    pub fn char_spacing(mut self, spacing: f32) -> Self {
-        self.char_spacing = Some(spacing);
-        self
-    }
-
-    pub fn line_height(mut self, height: f32) -> Self {
-        self.line_height = Some(height);
-        self
-    }
-
-    pub fn line_spacing(mut self, spacing: f32) -> Self {
-        self.line_spacing = Some(spacing);
         self
     }
 

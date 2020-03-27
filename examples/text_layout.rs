@@ -43,6 +43,7 @@ impl Game for App {
             TextDrawParams::default()
                 .text_size(40.0)
                 .wrap_width(graphics_size.width)
+                .wrap_height(graphics_size.height)
                 .color(Color::BLACK),
         );
 

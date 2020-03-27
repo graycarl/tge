@@ -460,15 +460,15 @@ impl Graphics {
                                 caret.x = 0.0;
                                 caret.y += line_height + line_spacing;
                             }
-                            let glyph_caret = Position::new(
+                            let glyph_position = Position::new(
                                 caret.x - origin.x + metrics.bounds.xmin,
                                 caret.y - origin.y + line_metrics.ascent - glyph_size.height + (line_height - line_metrics.new_line_size) / 2.0 - metrics.bounds.ymin,
                             );
 
-                            let x0y0 = model_matrix * Vec4::new(glyph_caret.x, glyph_caret.y, 0.0, 1.0);
-                            let x1y0 = model_matrix * Vec4::new(glyph_caret.x + glyph_size.width, glyph_caret.y, 0.0, 1.0);
-                            let x0y1 = model_matrix * Vec4::new(glyph_caret.x, glyph_caret.y + glyph_size.height, 0.0, 1.0);
-                            let x1y1 = model_matrix * Vec4::new(glyph_caret.x + glyph_size.width, glyph_caret.y + glyph_size.height, 0.0, 1.0);
+                            let x0y0 = model_matrix * Vec4::new(glyph_position.x, glyph_position.y, 0.0, 1.0);
+                            let x1y0 = model_matrix * Vec4::new(glyph_position.x + glyph_size.width, glyph_position.y, 0.0, 1.0);
+                            let x0y1 = model_matrix * Vec4::new(glyph_position.x, glyph_position.y + glyph_size.height, 0.0, 1.0);
+                            let x1y1 = model_matrix * Vec4::new(glyph_position.x + glyph_size.width, glyph_position.y + glyph_size.height, 0.0, 1.0);
 
                             let vertices = vec![
                                 Vertex {

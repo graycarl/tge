@@ -21,7 +21,7 @@ impl App {
         let font = Font::load(engine, "assets/roboto-fonts/Roboto-Regular.ttf")?;
         Ok(Self {
             font,
-            text: "Use `left`, `right`, `up` and `down` button to change text layout gravity.\nAnd input something here..".to_owned(),
+            text: "Use `left`, `right`, `up` and `down` button to change text layout gravity.\nAnd input something here...".to_owned(),
             horizontal_align: TextHorizontalAlign::default(),
             vertical_align: TextVerticalAlign::default(),
         })

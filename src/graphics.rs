@@ -410,6 +410,110 @@ impl Graphics {
         self.append_vertices_and_elements(vertices, Some(elements));
     }
 
+    pub fn draw_text(&mut self, font: &Font, text: &str, params: TextDrawParams) {
+        assert!(font.font().has_horizontal_metrics(), "the font does not provides horizontal text layout metrics");
+
+        self.switch_draw_command(DrawCommand {
+            texture: font.clone_texture(),
+            primitive: PrimitiveType::Triangles,
+        });
+
+        let text_size = params.text_size.unwrap_or(14.0);
+        let horizontal_align = params.horizontal_align.unwrap_or(TextHorizontalAlign::default());
+        let vertical_align = params.vertical_align.unwrap_or(TextVerticalAlign::default());
+        let wrap_width = params.wrap_width.unwrap_or(0.0);
+        let wrap_height = params.wrap_height.unwrap_or(0.0);
+        let char_spacing = params.char_spacing.unwrap_or(0.0);
+        let line_height = params.line_height.unwrap_or_else(|| font.font().new_line_height(text_size));
+        let line_spacing = params.line_spacing.unwrap_or(0.0);
+        let hhea = font.font().hhea(text_size);
+
+        let origin = params.origin.unwrap_or_else(|| Point::zero());
+        let position = params.position.map(|position| Vec3::new(position.x, position.y, 0.0)).unwrap_or_else(|| Vec3::zero());
+        let rotation = params.rotation.map(|angle| Quat::from_rotation_z(angle.radians_value())).unwrap_or_else(|| Quat::from_rotation_z(0.0));
+        let scale = params.scale.map(|scale| Vec3::new(scale.x, scale.y, 1.0)).unwrap_or_else(|| Vec3::one());
+        let model_matrix = Mat4::from_scale_rotation_translation(scale, rotation, position);
+
+        let color = params.color.unwrap_or(Color::WHITE);
+
+        let mut caret = Position::zero();
+        for character in text.chars() {
+            if character.is_control() {
+                match character {
+                    '\n' => {
+                        caret.x = 0.0;
+                        caret.y += line_height;
+                    }
+                    _ => (),
+                }
+            } else {
+                let metrics = font.font().metrics(character, text_size);
+                loop {
+                    let result = font.cache_glyph(character, text_size);
+                    match result {
+                        Ok(cache_by) => {
+                            let uv = match cache_by {
+                                font::CacheBy::Add(uv) => uv,
+                                font::CacheBy::Exist(uv) => uv,
+                            };
+                            let glyph_caret = Position::new(
+                                caret.x - origin.x + metrics.bounds.xmin,
+                                caret.y - origin.y + hhea.ascent - metrics.height as f32 - metrics.bounds.ymin,
+                            );
+                            let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
+                            let x0y0 = model_matrix * Vec4::new(glyph_caret.x, glyph_caret.y, 0.0, 1.0);
+                            let x1y0 = model_matrix * Vec4::new(glyph_caret.x + glyph_size.width, glyph_caret.y, 0.0, 1.0);
+                            let x0y1 = model_matrix * Vec4::new(glyph_caret.x, glyph_caret.y + glyph_size.height, 0.0, 1.0);
+                            let x1y1 = model_matrix * Vec4::new(glyph_caret.x + glyph_size.width, glyph_caret.y + glyph_size.height, 0.0, 1.0);
+
+                            let vertices = vec![
+                                Vertex {
+                                    position: Position::new(x0y0.x(), x0y0.y()),
+                                    uv: uv.top_left(),
+                                    color,
+                                },
+                                Vertex {
+                                    position: Position::new(x1y0.x(), x1y0.y()),
+                                    uv: uv.top_right(),
+                                    color,
+                                },
+                                Vertex {
+                                    position: Position::new(x0y1.x(), x0y1.y()),
+                                    uv: uv.bottom_left(),
+                                    color,
+                                },
+                                Vertex {
+                                    position: Position::new(x1y1.x(), x1y1.y()),
+                                    uv: uv.bottom_right(),
+                                    color,
+                                },
+                            ];
+                            let elements = SPRITE_ELEMENTS.to_vec();
+                            self.append_vertices_and_elements(vertices, Some(elements));
+
+                            caret.x += metrics.advance_width;
+                            break;
+                        }
+                        Err(cache_error) => {
+                            let cache_size_maximized = font.cache_size() >= self.max_texture_size;
+                            match (cache_error, cache_size_maximized) {
+                                (font::CacheError::TooLarge, true) => panic!("character is too large"),
+                                (font::CacheError::NoRoom, true) => {
+                                    self.flush();
+                                    font.clear_cache();
+                                }
+                                _ => {
+                                    self.flush();
+                                    font.resize_cache((font.cache_size() * 2).min(self.max_texture_size));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 #[derive(Debug, Clone)]

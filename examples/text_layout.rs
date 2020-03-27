@@ -11,6 +11,8 @@ const TITLE: &str = "Text Layout";
 struct App {
     font: Font,
     text: String,
+    horizontal_align: TextHorizontalAlign,
+    vertical_align: TextVerticalAlign,
 }
 
 impl App {
@@ -19,7 +21,9 @@ impl App {
         let font = Font::load(engine, "assets/roboto-fonts/Roboto-Regular.ttf")?;
         Ok(Self {
             font,
-            text: "Hello, world!\nPlease input something..".to_owned(),
+            text: "Use `left`, `right`, `up` and `down` button to change text layout gravity.\nAnd input something here..".to_owned(),
+            horizontal_align: TextHorizontalAlign::default(),
+            vertical_align: TextVerticalAlign::default(),
         })
     }
 
@@ -30,6 +34,36 @@ impl Game for App {
     fn update(&mut self, engine: &mut Engine) -> GameResult {
         let title = format!("{} - FPS: {}", TITLE, engine.timer().real_time_fps().round());
         engine.window().set_title(title);
+
+        if engine.keyboard().is_key_down(KeyCode::Left) {
+            match self.horizontal_align {
+                TextHorizontalAlign::Center => self.horizontal_align = TextHorizontalAlign::Start,
+                TextHorizontalAlign::End => self.horizontal_align = TextHorizontalAlign::Center,
+                _ => (),
+            }
+        }
+        if engine.keyboard().is_key_down(KeyCode::Right) {
+            match self.horizontal_align {
+                TextHorizontalAlign::Center => self.horizontal_align = TextHorizontalAlign::End,
+                TextHorizontalAlign::Start => self.horizontal_align = TextHorizontalAlign::Center,
+                _ => (),
+            }
+        }
+        if engine.keyboard().is_key_down(KeyCode::Up) {
+            match self.vertical_align {
+                TextVerticalAlign::Middle => self.vertical_align = TextVerticalAlign::Top,
+                TextVerticalAlign::Bottom => self.vertical_align = TextVerticalAlign::Middle,
+                _ => (),
+            }
+        }
+        if engine.keyboard().is_key_down(KeyCode::Down) {
+            match self.vertical_align {
+                TextVerticalAlign::Middle => self.vertical_align = TextVerticalAlign::Bottom,
+                TextVerticalAlign::Top => self.vertical_align = TextVerticalAlign::Middle,
+                _ => (),
+            }
+        }
+
         Ok(())
     }
 
@@ -41,9 +75,11 @@ impl Game for App {
             &self.font,
             &self.text,
             TextDrawParams::default()
-                .text_size(40.0)
+                .text_size(24.0)
                 .wrap_width(graphics_size.width)
                 .wrap_height(graphics_size.height)
+                .horizontal_align(self.horizontal_align)
+                .vertical_align(self.vertical_align)
                 .color(Color::BLACK),
         );
 

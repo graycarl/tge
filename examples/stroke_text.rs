@@ -25,8 +25,8 @@ impl App {
         let font = Font::load(engine, "assets/roboto-fonts/Roboto-Regular.ttf")?;
         let text = "Hello, world!".to_owned();
         let text_size = 40.0;
-        let origin = Position::new(20.0, 20.0);
-        let position = Position::new(200.0, 200.0);
+        let origin = Position::new(80.0, 30.0);
+        let position = Position::new(300.0, 300.0);
         let rotation = Angle::zero();
         let scale = Vector::new(2.0, 2.0);
         let color = Color::RED;

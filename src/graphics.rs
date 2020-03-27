@@ -428,6 +428,77 @@ impl Graphics {
         let line_spacing = params.line_spacing.unwrap_or(0.0);
 
         let origin = params.origin.unwrap_or_else(|| Point::zero());
+
+        let (line_layout_infos, layout_height) = {
+            let mut line_layout_infos = Vec::new();
+            let mut glyph_infos = Vec::new();
+            let mut layout_width = 0.0;
+            let mut layout_height = 0.0;
+            let mut caret = Position::zero();
+            for character in text.chars() {
+                if character.is_control() {
+                    match character {
+                        '\n' => {
+                            line_layout_infos.push((glyph_infos, layout_width));
+                            glyph_infos = Vec::new();
+                            layout_width = 0.0;
+                            if layout_height > 0.0 {
+                                layout_height += line_spacing;
+                            }
+                            layout_height += line_height;
+                            caret.x = 0.0;
+                            caret.y += line_height + line_spacing;
+                        }
+                        _ => (),
+                    }
+                } else {
+                    let metrics = font.font().metrics(character, text_size);
+                    let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
+                    if wrap_width > 0.0 && caret.x > 0.0 && caret.x + glyph_size.width > wrap_width {
+                        line_layout_infos.push((glyph_infos, layout_width));
+                        glyph_infos = Vec::new();
+                        layout_width = 0.0;
+                        if layout_height > 0.0 {
+                            layout_height += line_spacing;
+                        }
+                        layout_height += line_height;
+                        caret.x = 0.0;
+                        caret.y += line_height + line_spacing;
+                    }
+                    let glyph_position = Position::new(
+                        caret.x - origin.x + metrics.bounds.xmin,
+                        caret.y - origin.y + line_metrics.ascent - glyph_size.height + (line_height - line_metrics.new_line_size) / 2.0 - metrics.bounds.ymin,
+                    );
+                    glyph_infos.push((character, glyph_position, glyph_size));
+                    if layout_width > 0.0 {
+                        layout_width += char_spacing;
+                    }
+                    layout_width += metrics.advance_width;
+                    caret.x += metrics.advance_width + char_spacing;
+                }
+            }
+            if !glyph_infos.is_empty() {
+                line_layout_infos.push((glyph_infos, layout_width));
+                if layout_height > 0.0 {
+                    layout_height += line_spacing;
+                }
+                layout_height += line_height;
+            }
+            (line_layout_infos, layout_height)
+        };
+
+        let offset_y = {
+            if wrap_height > 0.0 {
+                match vertical_align {
+                    TextVerticalAlign::Top => 0.0,
+                    TextVerticalAlign::Middle => (wrap_height - layout_height) / 2.0,
+                    TextVerticalAlign::Bottom => wrap_height - layout_height,
+                }
+            } else {
+                0.0
+            }
+        };
+
         let position = params.position.map(|position| Vec3::new(position.x, position.y, 0.0)).unwrap_or_else(|| Vec3::zero());
         let rotation = params.rotation.map(|angle| Quat::from_rotation_z(angle.radians_value())).unwrap_or_else(|| Quat::from_rotation_z(0.0));
         let scale = params.scale.map(|scale| Vec3::new(scale.x, scale.y, 1.0)).unwrap_or_else(|| Vec3::one());
@@ -435,40 +506,31 @@ impl Graphics {
 
         let color = params.color.unwrap_or(Color::WHITE);
 
-        let mut caret = Position::zero();
-        for character in text.chars() {
-            if character.is_control() {
-                match character {
-                    '\n' => {
-                        caret.x = 0.0;
-                        caret.y += line_height + line_spacing;
+        for (glyph_infos, layout_width) in line_layout_infos {
+            let offset_x = {
+                if wrap_width > 0.0 {
+                    match horizontal_align {
+                        TextHorizontalAlign::Start => 0.0,
+                        TextHorizontalAlign::Center => (wrap_width - layout_width) / 2.0,
+                        TextHorizontalAlign::End => wrap_width - layout_width,
                     }
-                    _ => (),
+                } else {
+                    0.0
                 }
-            } else {
+            };
+            for (character, glyph_position, glyph_size) in glyph_infos {
                 loop {
-                    let result = font.cache_glyph(character, text_size);
-                    match result {
+                    match font.cache_glyph(character, text_size) {
                         Ok(cache_by) => {
                             let uv = match cache_by {
                                 font::CacheBy::Add(uv) => uv,
                                 font::CacheBy::Exist(uv) => uv,
                             };
-                            let metrics = font.font().metrics(character, text_size);
-                            let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
-                            if wrap_width > 0.0 && caret.x > 0.0 && caret.x + glyph_size.width > wrap_width {
-                                caret.x = 0.0;
-                                caret.y += line_height + line_spacing;
-                            }
-                            let glyph_position = Position::new(
-                                caret.x - origin.x + metrics.bounds.xmin,
-                                caret.y - origin.y + line_metrics.ascent - glyph_size.height + (line_height - line_metrics.new_line_size) / 2.0 - metrics.bounds.ymin,
-                            );
 
-                            let x0y0 = model_matrix * Vec4::new(glyph_position.x, glyph_position.y, 0.0, 1.0);
-                            let x1y0 = model_matrix * Vec4::new(glyph_position.x + glyph_size.width, glyph_position.y, 0.0, 1.0);
-                            let x0y1 = model_matrix * Vec4::new(glyph_position.x, glyph_position.y + glyph_size.height, 0.0, 1.0);
-                            let x1y1 = model_matrix * Vec4::new(glyph_position.x + glyph_size.width, glyph_position.y + glyph_size.height, 0.0, 1.0);
+                            let x0y0 = model_matrix * Vec4::new(offset_x + glyph_position.x, offset_y + glyph_position.y, 0.0, 1.0);
+                            let x1y0 = model_matrix * Vec4::new(offset_x + glyph_position.x + glyph_size.width, offset_y + glyph_position.y, 0.0, 1.0);
+                            let x0y1 = model_matrix * Vec4::new(offset_x + glyph_position.x, offset_y + glyph_position.y + glyph_size.height, 0.0, 1.0);
+                            let x1y1 = model_matrix * Vec4::new(offset_x + glyph_position.x + glyph_size.width, offset_y + glyph_position.y + glyph_size.height, 0.0, 1.0);
 
                             let vertices = vec![
                                 Vertex {
@@ -494,8 +556,6 @@ impl Graphics {
                             ];
                             let elements = SPRITE_ELEMENTS.to_vec();
                             self.append_vertices_and_elements(vertices, Some(elements));
-
-                            caret.x += metrics.advance_width + char_spacing;
                             break;
                         }
                         Err(cache_error) => {

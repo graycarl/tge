@@ -446,7 +446,6 @@ impl Graphics {
                     _ => (),
                 }
             } else {
-                let metrics = font.font().metrics(character, text_size);
                 loop {
                     let result = font.cache_glyph(character, text_size);
                     match result {
@@ -455,11 +454,13 @@ impl Graphics {
                                 font::CacheBy::Add(uv) => uv,
                                 font::CacheBy::Exist(uv) => uv,
                             };
+                            let metrics = font.font().metrics(character, text_size);
+                            let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
                             let glyph_caret = Position::new(
                                 caret.x - origin.x + metrics.bounds.xmin,
-                                caret.y - origin.y + line_metrics.ascent - metrics.height as f32 - metrics.bounds.ymin,
+                                caret.y - origin.y + line_metrics.ascent - glyph_size.height + (line_height - line_metrics.new_line_size) / 2.0 - metrics.bounds.ymin,
                             );
-                            let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
+
                             let x0y0 = model_matrix * Vec4::new(glyph_caret.x, glyph_caret.y, 0.0, 1.0);
                             let x1y0 = model_matrix * Vec4::new(glyph_caret.x + glyph_size.width, glyph_caret.y, 0.0, 1.0);
                             let x0y1 = model_matrix * Vec4::new(glyph_caret.x, glyph_caret.y + glyph_size.height, 0.0, 1.0);

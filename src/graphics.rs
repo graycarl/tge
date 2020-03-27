@@ -10,6 +10,7 @@ mod texture;
 mod canvas;
 mod font;
 mod sprite_params;
+mod text_params;
 
 use opengl::BufferUsage;
 use renderer::{Renderer, RendererBuilder};
@@ -25,6 +26,7 @@ pub use texture::{Texture, NO_TEXTURE};
 pub use canvas::{Canvas, NO_CANVAS};
 pub use font::Font;
 pub use sprite_params::SpriteDrawParams;
+pub use text_params::{TextHorizontalAlign, TextVerticalAlign, TextDrawParams};
 
 use crate::error::{GameError, GameResult};
 use crate::math::{Position, Point, Size, Region, Viewport};

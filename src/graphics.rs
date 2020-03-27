@@ -441,7 +441,7 @@ impl Graphics {
                 match character {
                     '\n' => {
                         caret.x = 0.0;
-                        caret.y += line_height;
+                        caret.y += line_height + line_spacing;
                     }
                     _ => (),
                 }
@@ -456,6 +456,10 @@ impl Graphics {
                             };
                             let metrics = font.font().metrics(character, text_size);
                             let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
+                            if wrap_width > 0.0 && caret.x > 0.0 && caret.x + glyph_size.width > wrap_width {
+                                caret.x = 0.0;
+                                caret.y += line_height + line_spacing;
+                            }
                             let glyph_caret = Position::new(
                                 caret.x - origin.x + metrics.bounds.xmin,
                                 caret.y - origin.y + line_metrics.ascent - glyph_size.height + (line_height - line_metrics.new_line_size) / 2.0 - metrics.bounds.ymin,
@@ -491,7 +495,7 @@ impl Graphics {
                             let elements = SPRITE_ELEMENTS.to_vec();
                             self.append_vertices_and_elements(vertices, Some(elements));
 
-                            caret.x += metrics.advance_width;
+                            caret.x += metrics.advance_width + char_spacing;
                             break;
                         }
                         Err(cache_error) => {

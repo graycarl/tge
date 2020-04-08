@@ -296,7 +296,7 @@ impl Graphics {
             self.program.set_uniform_matrix_4("u_projection", &self.projection_matrix.to_cols_array());
         }
     }
-    
+
     pub fn is_adjust_font_by_scale_factor(&self) -> bool {
         self.adjust_font_by_scale_factor
     }
@@ -421,8 +421,18 @@ impl Graphics {
     }
 
     pub fn draw_text(&mut self, font: &Font, text: &str, params: TextDrawParams) {
-        let text_size = params.text_size.unwrap_or(14.0);
-        let line_metrics = font.font().horizontal_line_metrics(text_size).expect("the font does not support horizontal layout");
+        let scale_factor = {
+            if self.adjust_font_by_scale_factor && self.canvas.is_none() {
+                self.window().scale_factor() as f32
+            } else {
+                1.0
+            }
+        };
+        let text_size = params.text_size.unwrap_or(14.0) * scale_factor;
+        let line_metrics = font.font()
+            .horizontal_line_metrics(text_size)
+            .expect("the font does not support horizontal layout")
+            .scale(1.0 / scale_factor);
 
         self.switch_draw_command(DrawCommand {
             texture: font.clone_texture(),
@@ -462,7 +472,7 @@ impl Graphics {
                         _ => (),
                     }
                 } else {
-                    let metrics = font.font().metrics(character, text_size);
+                    let metrics = font.font().metrics(character, text_size).scale(1.0 / scale_factor);
                     let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
                     if wrap_width > 0.0 && caret.x > 0.0 && caret.x + glyph_size.width > wrap_width {
                         line_layout_infos.push((glyph_infos, layout_width));

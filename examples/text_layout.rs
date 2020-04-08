@@ -75,7 +75,7 @@ impl Game for App {
             &self.font,
             &self.text,
             TextDrawParams::default()
-                .text_size(24.0)
+                .text_size(20.0)
                 .wrap_width(graphics_size.width)
                 .wrap_height(graphics_size.height)
                 .horizontal_align(self.horizontal_align)

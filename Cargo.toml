@@ -18,7 +18,7 @@ glutin = "0.24.0"
 glow = "0.4.0"
 glam = "0.8.6"
 image = "0.23.4"
-fontdue = { git = "https://github.com/mooman219/fontdue.git", rev = "610a2e9" }
+fontdue = { git = "https://github.com/takwolf/fontdue.git", rev = "d10fdeb" }
 rodio = "0.11.0"
 gilrs = "0.7.4"
 

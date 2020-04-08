@@ -63,6 +63,7 @@ pub struct Graphics {
     default_texture: Rc<opengl::Texture>,
     canvas: Option<Rc<opengl::Framebuffer>>,
     max_texture_size: u32,
+    adjust_font_by_scale_factor: bool,
     renderer: Renderer,
     vertices: Vec<Vertex>,
     elements: Vec<u32>,
@@ -126,6 +127,7 @@ impl Graphics {
             default_texture,
             canvas: None,
             max_texture_size,
+            adjust_font_by_scale_factor: graphics_config.adjust_font_by_scale_factor,
             renderer,
             vertices,
             elements,
@@ -293,6 +295,14 @@ impl Graphics {
             }
             self.program.set_uniform_matrix_4("u_projection", &self.projection_matrix.to_cols_array());
         }
+    }
+    
+    pub fn is_adjust_font_by_scale_factor(&self) -> bool {
+        self.adjust_font_by_scale_factor
+    }
+
+    pub fn set_adjust_font_by_scale_factor(&mut self, flag: bool) {
+        self.adjust_font_by_scale_factor = flag;
     }
 
     pub fn clear(&mut self, color: impl Into<Color>) {
@@ -584,6 +594,7 @@ impl Graphics {
 pub struct GraphicsConfig {
     default_filter: Filter,
     default_wrap: Wrap,
+    adjust_font_by_scale_factor: bool,
     renderer_vertex_size: usize,
     renderer_element_size: usize,
 }
@@ -594,6 +605,7 @@ impl GraphicsConfig {
         Self {
             default_filter: Filter::default(),
             default_wrap: Wrap::default(),
+            adjust_font_by_scale_factor: true,
             renderer_vertex_size: SPRITE_VERTEX_COUNT * 2048,
             renderer_element_size: SPRITE_ELEMENT_COUNT * 2048,
         }
@@ -606,6 +618,11 @@ impl GraphicsConfig {
 
     pub fn default_wrap(mut self, wrap: Wrap) -> Self {
         self.default_wrap = wrap;
+        self
+    }
+
+    pub fn adjust_font_by_scale_factor(mut self, flag: bool) -> Self {
+        self.adjust_font_by_scale_factor = flag;
         self
     }
 

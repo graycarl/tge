@@ -35,6 +35,7 @@ use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use glutin::{ContextWrapper, PossiblyCurrent};
 use glow::{Context, HasContext};
 use glam::{Vec3, Vec4, Quat, Mat4};
+use fontdue::Metrics;
 use std::rc::Rc;
 
 const SPRITE_VERTEX_COUNT: usize = 4;
@@ -472,7 +473,14 @@ impl Graphics {
                         _ => (),
                     }
                 } else {
-                    let metrics = font.font().metrics(character, text_size).scale(1.0 / scale_factor);
+                    let metrics = font.font().metrics(character, text_size);
+                    let metrics = Metrics {
+                        width: ((metrics.width as f32) / scale_factor).ceil() as usize,
+                        height: ((metrics.height as f32) / scale_factor).ceil() as usize,
+                        advance_width: metrics.advance_width / scale_factor,
+                        advance_height: metrics.advance_height / scale_factor,
+                        bounds: metrics.bounds.scale(1.0 / scale_factor),
+                    };
                     let glyph_size = Size::new(metrics.width as f32, metrics.height as f32);
                     if wrap_width > 0.0 && caret.x > 0.0 && caret.x + glyph_size.width > wrap_width {
                         line_layout_infos.push((glyph_infos, layout_width));
